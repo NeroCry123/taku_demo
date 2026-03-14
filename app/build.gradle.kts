@@ -13,8 +13,7 @@ android {
         abortOnError = false
     }
     defaultConfig {
-//        applicationId = "com.taku.demo"
-        applicationId = "com.crazyll.app"
+        applicationId = "com.taku.demo"
         minSdk = 24
         targetSdk = 30
         versionCode = 1
