@@ -10,6 +10,7 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.TextView
 import android.widget.Toast
 import com.anythink.banner.api.ATBannerListener
 import com.anythink.banner.api.ATBannerView
@@ -25,12 +26,15 @@ import com.anythink.nativead.api.ATNativeEventListener
 import com.anythink.nativead.api.ATNativeNetworkListener
 import com.anythink.nativead.api.ATNativePrepareExInfo
 import com.anythink.nativead.api.ATNativeView
+import com.anythink.nativead.api.NativeAd
 import com.anythink.rewardvideo.api.ATRewardVideoAd
 import com.anythink.rewardvideo.api.ATRewardVideoListener
 import com.anythink.splashad.api.ATSplashAd
 import com.anythink.splashad.api.ATSplashAdExtraInfo
 import com.anythink.splashad.api.ATSplashAdListener
-import com.bytedance.sdk.openadsdk.TTDislikeDialogAbstract
+import com.bytedance.sdk.openadsdk.TTAdDislike
+import com.bytedance.sdk.openadsdk.TTFeedAd
+import com.bytedance.sdk.openadsdk.TTNativeAd
 import com.bytedance.sdk.openadsdk.TTNativeExpressAd
 
 class TestActivity : Activity() {
@@ -53,6 +57,10 @@ class TestActivity : Activity() {
     private val rewardVideoAdPos = ""
     private var splashContainer: FrameLayout? = null
     private var isInit = false //todo 是否已经初始化sdk
+
+    private val tvLog: TextView by lazy {
+        findViewById(R.id.tv_log)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -116,8 +124,11 @@ class TestActivity : Activity() {
         }
         if(appId.isEmpty() || appKey.isEmpty()){
             Toast.makeText(this, "请先配置appId和appKey", Toast.LENGTH_SHORT).show()
+            showError("初始化失败, 请先配置appId和appKey")
             return
         }
+        ATSDK.setNetworkLogDebug(true)//todo 测试阶段可以打开日志，正式上线时请关闭日志
+        ATSDK.integrationChecking(this) //todo 集成检测，检测SDK是否正常集成
         ATSDK.init(context, appId, appKey)
         ATSDK.start()
         Log.i(tag, "初始化-成功")
@@ -130,8 +141,10 @@ class TestActivity : Activity() {
     private fun loadSplashAd() {
         if (!isInit) {
             Toast.makeText(this, "请先初始化SDK", Toast.LENGTH_SHORT).show()
+            showError("请先初始化SDK")
             return
         }
+        showError("")
         var splashAd: ATSplashAd? = null
         splashAd = ATSplashAd(this, splashAdPos, object : ATSplashAdListener {
             override fun onAdLoaded(b: Boolean) {
@@ -144,6 +157,7 @@ class TestActivity : Activity() {
 
             override fun onNoAdError(adError: AdError) {
                 Log.i(tag, "开屏-加载失败，error code = " + adError.getCode() + ", msg = " + adError.getDesc())
+                showError("开屏-加载失败，error code = " + adError.getCode() + ", msg = " + adError.getDesc())
             }
 
             override fun onAdShow(atAdInfo: ATAdInfo) {
@@ -190,8 +204,10 @@ class TestActivity : Activity() {
     private fun loadRewardVideoAd() {
         if (!isInit) {
             Toast.makeText(this, "请先初始化SDK", Toast.LENGTH_SHORT).show()
+            showError("请先初始化SDK")
             return
         }
+        showError("")
         val rewardVideoAd = ATRewardVideoAd(this, rewardVideoAdPos)
         val localExtraMap: MutableMap<String?, Any?> = HashMap()
         localExtraMap[ATAdConst.KEY.USER_ID] = "用户id"
@@ -205,6 +221,7 @@ class TestActivity : Activity() {
 
             override fun onRewardedVideoAdFailed(adError: AdError) {
                 Log.i(tag, "激励视频-加载失败 code = " + adError.getCode() + ", msg = " + adError.getDesc())
+                showError("激励视频-加载失败 code = " + adError.getCode() + ", msg = " + adError.getDesc())
             }
 
             override fun onRewardedVideoAdPlayStart(atAdInfo: ATAdInfo) {
@@ -233,7 +250,7 @@ class TestActivity : Activity() {
                 Log.i(tag, "激励视频-奖励到达")
             }
         })
-        rewardVideoAd!!.load()
+        rewardVideoAd.load()
     }
 
     /**
@@ -250,8 +267,10 @@ class TestActivity : Activity() {
     private fun loadInterstitialAd() {
         if (!isInit) {
             Toast.makeText(this, "请先初始化SDK", Toast.LENGTH_SHORT).show()
+            showError("请先初始化SDK")
             return
         }
+        showError("")
         val atInterstitial = ATInterstitial(this, interstitialAdPos)
         atInterstitial.setAdListener(object : ATInterstitialListener {
             override fun onInterstitialAdLoaded() {
@@ -261,6 +280,7 @@ class TestActivity : Activity() {
 
             override fun onInterstitialAdLoadFail(adError: AdError) {
                 Log.i(tag, "插屏-加载失败 code = " + adError.getCode() + " , msg = " + adError.getDesc())
+                showError("插屏-加载失败 code = " + adError.getCode() + " , msg = " + adError.getDesc())
             }
 
             override fun onInterstitialAdClicked(atAdInfo: ATAdInfo?) {
@@ -286,7 +306,7 @@ class TestActivity : Activity() {
             override fun onInterstitialAdVideoError(adError: AdError?) {
             }
         })
-        atInterstitial!!.load()
+        atInterstitial.load()
     }
 
     private fun showInterstitialAd(atInterstitial: ATInterstitial?) {
@@ -303,8 +323,10 @@ class TestActivity : Activity() {
     private fun loadNativeAd() {
         if (!isInit) {
             Toast.makeText(this, "请先初始化SDK", Toast.LENGTH_SHORT).show()
+            showError("请先初始化SDK")
             return
         }
+        showError("")
         var atNative: ATNative? = null
         atNative = ATNative(this, nativeAdPos, object : ATNativeNetworkListener {
             override fun onNativeAdLoaded() {
@@ -314,6 +336,7 @@ class TestActivity : Activity() {
 
             override fun onNativeAdLoadFail(adError: AdError) {
                 Log.i(tag, "信息流-加载失败 code = " + adError.getCode() + " , msg = " + adError.getDesc())
+                showError("信息流-加载失败 code = " + adError.getCode() + " , msg = " + adError.getDesc())
             }
         })
         val localExtraMap: MutableMap<String?, Any?> = HashMap()
@@ -330,10 +353,13 @@ class TestActivity : Activity() {
         atNative?.let {
             val nativeAd = it.nativeAd
             val nativeView = ATNativeView(this@TestActivity)
+
             nativeAd.setNativeEventListener(object : ATNativeEventListener {
                 override fun onAdImpressed(atNativeAdView: ATNativeAdView?, atAdInfo: ATAdInfo) {
                     Log.i(tag, "信息流-展示")
                     showShowEcpm(atAdInfo)
+
+                    nativeHandleClose(nativeAd, atAdInfo,nativeView)//信息流关闭处理(可选)
                 }
 
                 override fun onAdClicked(atNativeAdView: ATNativeAdView?, atAdInfo: ATAdInfo?) {
@@ -350,38 +376,6 @@ class TestActivity : Activity() {
                 }
             })
             nativeAd.renderAdContainer(nativeView, null)
-            //这个只面向穿山甲的=》setDevParams 需要放在prepare之前调用才有效,当点击关闭按钮的时候，就不会弹出反馈窗口（一闪而过），
-            nativeAd.setDevParams(hashMapOf<String, Any>(
-                "custom_dislike_dialog" to object : TTDislikeDialogAbstract(this) {
-
-                    override fun onCreate(p0: Bundle?) {
-                        super.onCreate(p0)
-                        //监听弹出的时候关闭它
-                        setOnShowListener {
-                            dismiss()
-                        }
-                        //如果需要删除view，可以在这里调用（可选）
-                        nativeView.parent?.let { parent ->
-                            if(parent is ViewGroup){
-                                parent.removeView(nativeView)
-                            }
-                        }
-                    }
-
-                    override fun getLayoutId(): Int {
-                        return 0
-                    }
-
-                    override fun getTTDislikeListViewIds(): IntArray {
-                        return intArrayOf()
-                    }
-
-                    override fun getLayoutParams(): ViewGroup.LayoutParams? {
-                        return null
-                    }
-
-                }
-            ))
             nativeAd.prepare(nativeView, ATNativePrepareExInfo())
             val viewGroup = findViewById<ViewGroup>(R.id.layout_ad_container)
             viewGroup.removeAllViews()
@@ -396,8 +390,10 @@ class TestActivity : Activity() {
     private fun loadBannerAd() {
         if (!isInit) {
             Toast.makeText(this, "请先初始化SDK", Toast.LENGTH_SHORT).show()
+            showError("请先初始化SDK")
             return
         }
+        showError("")
         val atBannerView = ATBannerView(this)
         atBannerView.setPlacementId(bannerAdPos)
         val localExtraMap: MutableMap<String?, Any?> = HashMap()
@@ -412,6 +408,7 @@ class TestActivity : Activity() {
 
             override fun onBannerFailed(adError: AdError) {
                 Log.i(tag, "横幅-加载失败: code = " + adError.getCode() + ", msg = " + adError.getDesc())
+                showError("横幅-加载失败: code = " + adError.getCode() + ", msg = " + adError.getDesc())
             }
 
             override fun onBannerClicked(atAdInfo: ATAdInfo?) {
@@ -421,58 +418,17 @@ class TestActivity : Activity() {
             override fun onBannerShow(atAdInfo: ATAdInfo) {
                 Log.i(tag, "横幅-展示")
                 showShowEcpm(atAdInfo)
-
-                //仅针对穿山甲的=》当点击关闭按钮的时候，就不会弹出反馈窗口（一闪而过）
-                if(atAdInfo.networkFirmId != 15){
-                    return
-                }
-                val field = atBannerView.javaClass.getDeclaredField("mCustomBannerAd")
-                field.isAccessible = true
-                val customBannerAd = field.get(atBannerView)
-                val fields = customBannerAd.javaClass.declaredFields
-                for (field in fields) {
-                    if (field.type == TTNativeExpressAd::class.java) {
-                        field.isAccessible = true
-                        val ttNativeAd = field.get(customBannerAd) as TTNativeExpressAd
-                        ttNativeAd.setDislikeDialog(object : TTDislikeDialogAbstract(this@TestActivity) {
-
-                            override fun onCreate(p0: Bundle?) {
-                                super.onCreate(p0)
-                                //监听弹出的时候关闭它
-                                setOnShowListener {
-                                    dismiss()
-                                }
-                                //如果需要删除view，可以在这里调用（可选）
-                                atBannerView.parent?.let { parent ->
-                                    if(parent is ViewGroup){
-                                        parent.removeView(atBannerView)
-                                    }
-                                }
-                            }
-
-                            override fun getLayoutId(): Int {
-                                return 0
-                            }
-
-                            override fun getTTDislikeListViewIds(): IntArray {
-                                return intArrayOf()
-                            }
-
-                            override fun getLayoutParams(): ViewGroup.LayoutParams? {
-                                return null
-                            }
-
-                        })
-                        break
-                    }
-                }
+                bannerHandleClose(atAdInfo,atBannerView)//横幅关闭处理(可选)
             }
 
             override fun onBannerClose(atAdInfo: ATAdInfo?) {
-
+                Log.i(tag, "横幅-关闭")
             }
 
             override fun onBannerAutoRefreshed(atAdInfo: ATAdInfo?) {
+                if(atAdInfo == null)return
+                showShowEcpm(atAdInfo)
+                bannerHandleClose(atAdInfo,atBannerView)//横幅关闭处理(可选)
             }
 
             override fun onBannerAutoRefreshFail(adError: AdError) {
@@ -496,15 +452,123 @@ class TestActivity : Activity() {
     private fun showShowEcpm(atAdInfo: ATAdInfo) {
         Log.i(tag, "价格:" + String.format("%.2f", atAdInfo.ecpm))
         Log.i(tag, "代码位:" + atAdInfo.networkPlacementId)
-        Log.i(tag, "广告平台:" + getSdkName(atAdInfo.networkFirmId))
+        Log.i(tag, "广告平台Id:" + atAdInfo.networkFirmId)
     }
 
-    private fun getSdkName(id: Int): String {
-        when (id) {
-            8 -> return "gdt"
-            15 -> return "pangle"
-            28 -> return "ks"
+    private fun showError(msg: String) {
+        tvLog.text = msg
+    }
+
+    /**
+     * 处理信息流广告的关闭按钮（仅用于穿山甲和GroMore）
+     */
+    private fun nativeHandleClose(nativeAd: NativeAd, atAdInfo: ATAdInfo, nativeView: ATNativeAdView){
+        if(atAdInfo.networkFirmId != 15 && atAdInfo.networkFirmId != 46){
+            return
         }
-        return ""
+        val field = nativeAd.javaClass.getDeclaredField("mBaseNativeAd")
+        field.isAccessible = true
+        val mBaseNativeAd = field.get(nativeAd)
+        val fields = mBaseNativeAd.javaClass.declaredFields
+        fun handle(dislikeDialog: TTAdDislike){
+            dislikeDialog.setDislikeInteractionCallback(object : TTAdDislike.DislikeInteractionCallback {
+                override fun onShow() {
+                    Log.i(tag, "setDislikeCallback-onShow")
+                    dislikeDialog.resetDislikeStatus()
+
+                    //移除广告(可选)
+                    nativeView.parent?.let { parent ->
+                        if(parent is ViewGroup){
+                            parent.removeView(nativeView)
+                        }
+                    }
+                }
+
+                override fun onSelected(p0: Int, p1: String?, p2: Boolean) {
+                    Log.i(tag, "setDislikeCallback-onSelected")
+                }
+
+                override fun onCancel() {
+                    Log.i(tag, "setDislikeCallback-onCancel")
+                }
+            })
+        }
+        for (field in fields) {
+            if (field.type == TTFeedAd::class.java) {
+                Log.i(tag, "TTFeedAd")
+                field.isAccessible = true
+                val ttFeedAd = field.get(mBaseNativeAd) as TTFeedAd
+                val dislikeDialog = ttFeedAd.getDislikeDialog(this@TestActivity)
+                handle(dislikeDialog)
+                break
+            }else if (field.type == TTNativeExpressAd::class.java) {
+                Log.i(tag, "TTNativeExpressAd")
+                field.isAccessible = true
+                val ttNativeExpressAd = field.get(mBaseNativeAd) as TTNativeExpressAd
+                val dislikeDialog = ttNativeExpressAd.getDislikeDialog(this@TestActivity)
+                handle(dislikeDialog)
+                break
+            }else if (field.type == TTNativeAd::class.java){
+                Log.i(tag, "TTNativeAd")
+                field.isAccessible = true
+                val ttNativeAd = field.get(mBaseNativeAd) as TTNativeAd
+                val dislikeDialog = ttNativeAd.getDislikeDialog(this@TestActivity)
+                handle(dislikeDialog)
+                break
+            }
+        }
+    }
+
+    /**
+     * 处理横幅广告的关闭按钮（仅用于穿山甲和GroMore）
+     */
+    private fun bannerHandleClose(atAdInfo: ATAdInfo, atBannerView: ATBannerView){
+
+        fun getAllFields(clazz: Class<*>): List<java.lang.reflect.Field> {
+            val fields = mutableListOf<java.lang.reflect.Field>()
+            var current: Class<*>? = clazz
+
+            while (current != null) {
+                fields.addAll(current.declaredFields)
+                current = current.superclass
+            }
+            return fields
+        }
+
+        if(atAdInfo.networkFirmId != 15 && atAdInfo.networkFirmId != 46 ){
+            return
+        }
+        val field = atBannerView.javaClass.getDeclaredField("mCustomBannerAd")
+        field.isAccessible = true
+        val customBannerAd = field.get(atBannerView)
+        val fields = getAllFields(customBannerAd.javaClass)
+        for (field in fields) {
+            if (field.type == TTNativeExpressAd::class.java) {
+                field.isAccessible = true
+                val ttNativeAd = field.get(customBannerAd) as TTNativeExpressAd
+                val dislikeDialog = ttNativeAd.getDislikeDialog(this)
+                dislikeDialog.setDislikeInteractionCallback(object : TTAdDislike.DislikeInteractionCallback {
+                    override fun onShow() {
+                        Log.i(tag, "setDislikeCallback-onShow")
+                        dislikeDialog.resetDislikeStatus()
+                        //移除广告(可选)
+                        atBannerView.parent?.let { parent ->
+                            if(parent is ViewGroup){
+                                parent.removeView(atBannerView)
+                            }
+                        }
+                    }
+
+                    override fun onSelected(p0: Int, p1: String?, p2: Boolean) {
+                        Log.i(tag, "setDislikeCallback-onSelected")
+                    }
+
+                    override fun onCancel() {
+                        Log.i(tag, "setDislikeCallback-onCancel")
+                    }
+                })
+                break
+            }
+        }
     }
 }
