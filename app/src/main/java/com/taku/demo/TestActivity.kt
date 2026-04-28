@@ -47,7 +47,7 @@ class TestActivity : Activity() {
         Manifest.permission.READ_EXTERNAL_STORAGE,
     )
 
-    private val tag = "TakuSdk"
+    private val tag = ""
     private val appId = ""
     private val appKey = ""
     private val splashAdPos = ""
@@ -127,8 +127,8 @@ class TestActivity : Activity() {
             showError("初始化失败, 请先配置appId和appKey")
             return
         }
-        ATSDK.setNetworkLogDebug(true)//todo 测试阶段可以打开日志，正式上线时请关闭日志
-        ATSDK.integrationChecking(this) //todo 集成检测，检测SDK是否正常集成
+//        ATSDK.setNetworkLogDebug(true)//todo 测试阶段可以打开日志，正式上线时请关闭日志
+//        ATSDK.integrationChecking(this) //todo 集成检测，检测SDK是否正常集成
         ATSDK.init(context, appId, appKey)
         ATSDK.start()
         Log.i(tag, "初始化-成功")

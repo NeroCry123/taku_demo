@@ -13,7 +13,7 @@ android {
         abortOnError = false
     }
     defaultConfig {
-        applicationId = "com.crazyll.app"
+        applicationId = "com.taku.demo"
         minSdk = 24
         targetSdk = 30
         versionCode = 1
@@ -28,7 +28,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -51,4 +51,4 @@ dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("com.google.android.material:material:1.13.0")
-0}
+}
